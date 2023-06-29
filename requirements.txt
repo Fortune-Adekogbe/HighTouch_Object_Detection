@@ -1,0 +1,8 @@
+# High touch object detection requirements
+# Usage: pip install -r requirements.txt
+
+# ----------------------------------------
+supervision==0.11.0
+ultralytics==8.0.124
+opencv-python==4.7.0.72
+imutils==0.5.4
