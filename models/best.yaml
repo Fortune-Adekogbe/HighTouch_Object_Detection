@@ -1,0 +1,15 @@
+description: Ultralytics best model trained on data.yaml
+author: Ultralytics
+license: AGPL-3.0 https://ultralytics.com/license
+version: 8.0.128
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: door
+  1: handle
+  2: cabinet door
+  3: refrigerator door
