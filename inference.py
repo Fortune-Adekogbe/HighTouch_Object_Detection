@@ -6,14 +6,14 @@ from imutils.video import VideoStream
 from helpers import *
 
 door_model = YOLO("models/best.pt")
-chair_model = YOLO("models/yolov8m.pt")
+#chair_model = YOLO("models/yolov8m.pt")
 
 def inference(img_path):
 
-    dpred = door_model.predict(img_path, classes=1)[0]
-    cpred = chair_model.predict(img_path, classes=[13, 56, 57, 60])[0]
+    dpred = door_model.predict(img_path, classes=1, conf=0.3)[0]
+    #cpred = chair_model.predict(img_path, classes=[13, 56, 57, 60], conf=0.3)[0]
 
-    return get_results(dpred) + get_results(cpred), [dpred, cpred]
+    return get_results(dpred), dpred #+ get_results(cpred), [dpred, cpred]
 
 ## Initializing video stream
 print('[INFO] starting video stream...')
@@ -25,6 +25,7 @@ while True:
     frame = imutils.resize(frame, width=400)
 
     predictions, _ = inference(frame)
+    print(len(predictions))
 
     for pred in predictions:
         (startX, startY, endX, endY) = int(pred['x1']), int(pred['y1']), int(pred['x2']), int(pred['y2'])
