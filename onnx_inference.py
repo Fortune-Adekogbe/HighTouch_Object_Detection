@@ -17,20 +17,16 @@ def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
     cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 
-def main(onnx_model, input_image):
+def main(onnx_model, frame):
 
-    session = onnxruntime.InferenceSession(onnx_model)
+    session = onnx_model
     session.get_modelmeta()
     input_name = session.get_inputs()[0].name
 
-    original_image: np.ndarray = cv2.imread(input_image)
-    [height, width, _] = original_image.shape
-    length = max((height, width))
-    image = np.zeros((length, length, 3), np.uint8)
-    image[0:height, 0:width] = original_image
-    scale = length / 640
+    
+    [height, width, _] = frame.shape
 
-    blob = cv2.dnn.blobFromImage(image, scalefactor=1 / 255, size=(640, 640), swapRB=True)
+    blob = cv2.dnn.blobFromImage(frame, scalefactor=1 / 255, size=(640, 640), swapRB=True)
 
     outputs = session.run([], {input_name: blob})
 
@@ -63,14 +59,14 @@ def main(onnx_model, input_image):
         box = boxes[index]
         detection = {
             'class_id': class_ids[index],
-            'class_name': CLASSES[class_ids[index]],
+            'class': CLASSES[class_ids[index]],
             'conf': scores[index],
-            'scale': scale}
+        }
         
-        detection['x1'] = box[0]
-        detection['x2'] = box[0]+box[2]
-        detection['y1'] = box[1]
-        detection['y2'] = box[1]+box[3]
+        detection['x1'] = box[0] * width/640
+        detection['x2'] = (box[0] + box[2]) * width/640
+        detection['y1'] = box[1]  * height/640
+        detection['y2'] = (box[1] + box[3]) * height/640
 
         detections.append(detection)
     #     draw_bounding_box(original_image, class_ids[index], scores[index], round(box[0] * scale), round(box[1] * scale),
@@ -84,4 +80,6 @@ def main(onnx_model, input_image):
 
 
 if __name__ == '__main__':
-    main("models/best.onnx", "samples/20485139e526d5b4.jpg")
+    model = onnxruntime.InferenceSession("models/best.onnx")
+    original_image: np.ndarray = cv2.imread("samples/20485139e526d5b4.jpg")
+    print(main(model, original_image))
