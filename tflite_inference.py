@@ -14,20 +14,21 @@ def read_tensor_from_readed_frame(frame, input_height=640, input_width=640,
   dims_expander = tf.expand_dims(float_caster, 0)
   resized = tf.image.resize(dims_expander, [input_height, input_width])
   result = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
+  print(result.shape)
   return result
 
-def inference(Model_Path, input_path):
+def inference(model, frame):
     ##Load tflite model and allocate tensors
-    interpreter = tf.lite.Interpreter(model_path=Model_Path)
+    interpreter = model
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    cv_image = image = cv2.imread(input_path)
+    # cv_image = image = cv2.imread(input_path)
 
     ##Converting the readed frame to RGB as opencv reads frame in BGR
-    image = Image.fromarray(cv_image).convert('RGB')
+    image = Image.fromarray(frame).convert('RGB')
 
     ##Converting image into tensor
     image_tensor = read_tensor_from_readed_frame(image)
@@ -37,7 +38,7 @@ def inference(Model_Path, input_path):
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
 
-    return output_data, cv_image
+    return output_data # , cv_image
 
 CLASSES = yaml_load(check_yaml('models/best.yaml'))['names']
 
@@ -51,10 +52,11 @@ def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
     cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 
-def main(model, input_image): 
+def main(model, frame): 
+    height, width, _ = (frame.shape)
 
-    outputs, original_image = inference(model, input_image)
-    original_image = cv2.resize(original_image, (640, 640))
+    outputs = inference(model, frame)
+    # original_image = cv2.resize(frame, (640, 640))
 
     outputs = np.array([cv2.transpose(outputs[0])])
     rows = outputs.shape[1]
@@ -89,25 +91,27 @@ def main(model, input_image):
         
         detection = {
             'class_id': class_ids[index],
-            'class_name': CLASSES[class_ids[index]],
+            'class': CLASSES[class_ids[index]],
             'conf': scores[index],
         }
         
-        detection['x1'] = box[0]
-        detection['x2'] = box[0]+box[2]
-        detection['y1'] = box[1]
-        detection['y2'] = box[1]+box[3]
+        detection['x1'] = box[0] * width/640
+        detection['x2'] = (box[0] + box[2]) * width/640
+        detection['y1'] = box[1]  * height/640
+        detection['y2'] = (box[1] + box[3]) * height/640
 
         detections.append(detection)
-        draw_bounding_box(original_image, class_ids[index], scores[index], round(box[0]), round(box[1]),
-                          round((box[0] + box[2])), round((box[1] + box[3])))
+    #     draw_bounding_box(original_image, class_ids[index], scores[index], round(box[0]), round(box[1]),
+    #                       round((box[0] + box[2])), round((box[1] + box[3])))
     
-    cv2.imshow('image', original_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('image', original_image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     return detections
 
 
 if __name__ == '__main__':
-    main("models/best_float32.tflite", "samples/20485139e526d5b4.jpg")
+    model = tf.lite.Interpreter(model_path="models/best_float32.tflite")
+    cv_image = image = cv2.imread("samples/20485139e526d5b4.jpg")
+    print(main(model, cv_image))
