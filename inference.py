@@ -1,19 +1,13 @@
 import time
 import cv2
-from ultralytics.yolo.engine.model import YOLO
+from tflite_inference import main
+import tensorflow as tf
+
 import imutils
 from imutils.video import VideoStream
 from helpers import *
 
-door_model = YOLO("models/best.pt")
-#chair_model = YOLO("models/yolov8m.pt")
-
-def inference(img_path):
-
-    dpred = door_model.predict(img_path, classes=1, conf=0.3)[0]
-    #cpred = chair_model.predict(img_path, classes=[13, 56, 57, 60], conf=0.3)[0]
-
-    return get_results(dpred), dpred #+ get_results(cpred), [dpred, cpred]
+model = tf.lite.Interpreter(model_path="models/best_float32.tflite")
 
 ## Initializing video stream
 print('[INFO] starting video stream...')
@@ -23,12 +17,12 @@ time.sleep(2.0)
 while True:
     frame = vs.read()
     frame = imutils.resize(frame, width=400)
-
-    predictions, _ = inference(frame)
+    # try tflite
+    predictions = main(model, frame)
     print(len(predictions))
 
     for pred in predictions:
-        (startX, startY, endX, endY) = int(pred['x1']), int(pred['y1']), int(pred['x2']), int(pred['y2'])
+        (startX, startY, endX, endY) = round(pred['x1']), round(pred['y1']), round(pred['x2']), round(pred['y2'])
         color = (0, 255, 0)
         label = f"{pred['class']} {float(pred['conf']):0.2f}"
 
