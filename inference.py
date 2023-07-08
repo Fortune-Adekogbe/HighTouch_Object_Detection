@@ -1,13 +1,14 @@
 import time
 import cv2
-from tflite_inference import main
+#from tflite_inference import main
+from onnx_inference import *
 import tensorflow as tf
 
 import imutils
 from imutils.video import VideoStream
 from helpers import *
 
-model = tf.lite.Interpreter(model_path="models/best_float32.tflite")
+model = onnxruntime.InferenceSession("models/best.onnx") # tf.lite.Interpreter(model_path="models/best_float32.tflite")
 
 ## Initializing video stream
 print('[INFO] starting video stream...')
