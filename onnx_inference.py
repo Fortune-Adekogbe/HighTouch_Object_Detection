@@ -2,19 +2,12 @@ import onnxruntime
 import cv2
 import numpy as np
 
-from ultralytics.yolo.utils import ROOT, yaml_load
+from ultralytics.yolo.utils import yaml_load
 from ultralytics.yolo.utils.checks import check_yaml
 
 CLASSES = yaml_load(check_yaml('models/best.yaml'))['names']
 
 colors = np.random.uniform(0, 255, size=(len(CLASSES), 3))
-
-
-def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
-    label = f'{CLASSES[class_id]} ({confidence:.2f})'
-    color = colors[class_id]
-    cv2.rectangle(img, (x, y), (x_plus_w, y_plus_h), color, 2)
-    cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 
 def main(onnx_model, frame):
@@ -69,12 +62,6 @@ def main(onnx_model, frame):
         detection['y2'] = (box[1] + box[3]) * height/640
 
         detections.append(detection)
-    #     draw_bounding_box(original_image, class_ids[index], scores[index], round(box[0] * scale), round(box[1] * scale),
-    #                       round((box[0] + box[2]) * scale), round((box[1] + box[3]) * scale))
-
-    # cv2.imshow('image', original_image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
     return detections
 
